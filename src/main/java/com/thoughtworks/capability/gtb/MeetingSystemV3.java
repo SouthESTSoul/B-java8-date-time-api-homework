@@ -1,6 +1,9 @@
 package com.thoughtworks.capability.gtb;
 
 import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -10,12 +13,15 @@ import java.time.format.DateTimeFormatter;
  *   a:上个会议是伦敦的同事定的，他在界面上输入的时间是"2020-04-01 14:30:00"，所以我们要解析的字符串是伦敦的本地时间
  *   b:而我们在当前时区(北京时区)使用系统
  *   c:我们设置好新会议时间后，要发给芝加哥的同事查看，所以格式化后的新会议时间要求是芝加哥的本地时间
- * 2.用Period来实现下个会议时间的计算
+ * 2.用+来实现下个会议时间的计算
  *
  * @author itutry
  * @create 2020-05-19_18:43
  */
 public class MeetingSystemV3 {
+  private static ZoneId LONDONTIMEZONE = ZoneId.of("Europe/London");
+  private static ZoneId BEIJINGTIMEZONE = ZoneId.of("Asia/Shanghai");
+  private static ZoneId CHICAGOTIMEZONE = ZoneId.of("America/Chicago");
 
   public static void main(String[] args) {
     String timeStr = "2020-04-01 14:30:00";
@@ -25,14 +31,14 @@ public class MeetingSystemV3 {
     // 从字符串解析得到会议时间
     LocalDateTime meetingTime = LocalDateTime.parse(timeStr, formatter);
 
-    LocalDateTime now = LocalDateTime.now();
-    if (now.isAfter(meetingTime)) {
-      LocalDateTime tomorrow = now.plusDays(1);
-      int newDayOfYear = tomorrow.getDayOfYear();
-      meetingTime = meetingTime.withDayOfYear(newDayOfYear);
-
+    ZonedDateTime meetingTimeInLondon = meetingTime.atZone(LONDONTIMEZONE);
+    ZonedDateTime meetingTimeInBeijing = meetingTimeInLondon.withZoneSameInstant(BEIJINGTIMEZONE);
+    ZonedDateTime now = LocalDateTime.now().atZone(BEIJINGTIMEZONE);
+    if (now.isAfter(meetingTimeInBeijing)) {
+      meetingTimeInLondon= meetingTimeInLondon.plus(Period.ofDays(1));
+      ZonedDateTime meetingTimeInChicago = meetingTimeInLondon.withZoneSameInstant(CHICAGOTIMEZONE);
       // 格式化新会议时间
-      String showTimeStr = formatter.format(meetingTime);
+      String showTimeStr = formatter.format(meetingTimeInChicago);
       System.out.println(showTimeStr);
     } else {
       System.out.println("会议还没开始呢");
